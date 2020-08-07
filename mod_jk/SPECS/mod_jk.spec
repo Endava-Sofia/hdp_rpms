@@ -1,36 +1,21 @@
 #
 # Accepted parameters for 'rpmbuild':
 #
-# --with tests		- make tests before building
 
-Summary: mod_jk
+Summary: Connectors between Apache and Tomcat Servlet Container
 Name: mod_jk
 Version: 1.2.48
 Release: HPC1_centos7.x86_64
-License: Apache.....
-Group: .......
-Source: http://apache.cbox.biz/tomcat/tomcat-connectors/jk/tomcat-connectors-1.2.48-src.tar.gz
-BuildRoot: %{_tmppath}/samhain-%{version}-root
-Packager: Kostadin Karaivanovov <kostadin.karaivanov@endava.com>
+License: Apache-2.0
+Group: Productivity/Networking/Web/Frontends
+Source: http://apache.cbox.biz/tomcat/tomcat-connectors/jk/tomcat-connectors-%{version}-src.tar.gz
+BuildRoot: %{_tmppath}/%{name}-%{version}-root
+Packager: Lyubomir Geshev <lyubomir.geshev@endava.com>
 Provides: %{name}
 Requires(pre): shadow-utils
 Requires(post): /sbin/restorecon
 BuildRequires: gcc, httpd-devel
-Requires:       httpd
-
-
-#%global selinux_policyver %(%{__sed} -e 's,.*selinux-policy-\\([^/]*\\)/.*,\\1,' /usr/share/selinux/devel/policyhelp || echo 0.0.0)
-#%global modulename samhain
-
-# dummy (fix configure warning)
-# datarootdir = @datarootdir@
-
-# no quotes here - aparently will be expanded literally
-
-#%define password %(echo $PASSWORD)
-
-#%define withpwd_prg xDSH_STANDALONE
-#%define withstg_prg x
+Requires:      httpd
 
 # disable automatic stripping of binaries upon installation
 %define __spec_install_post %{nil}
@@ -42,11 +27,10 @@ Requires:       httpd
 %define _use_internal_dependency_generator     0
 
 %description
-mod_jk
+This package provides modules for Apache to invisibly integrate Tomcat
+capabilities into an existing Apache installation.
 
-#%prep
-#%setup -q -n samhain-%{version}
-#%setup -T -D -a 1 -q -n samhain-%{version}
+# To load the module into Apache, run the command "a2enmod jk" as root.
 
 %build
 cd native
@@ -55,20 +39,8 @@ make
 
 
 %install
-#rm -rf ${RPM_BUILD_ROOT}
-# sstrip shouldn't be used since binaries will be stripped later
-## cat << EOF > sstrip
-## #!/bin/sh
-## echo "*** SSTRIP DISABLED ***"
-## EOF
 make DESTDIR=${RPM_BUILD_ROOT} install
-# copy script files to /var/lib/samhain so that we can use them right
-# after the package is installed
-#
 install -m 700 native/apache-2.0/mod_jk.so usr/lib64/httpd/modules/mod_jk.so
-#
-# file list (helpful advice from Lars Kellogg-Stedman)
-#
 
 exit 0
 
@@ -76,20 +48,11 @@ exit 0
 %files -f sh_file_list
 %defattr(-,root,root)
 
-%attr(644,root,root) /usr/share/man/man5/samhain*
-%attr(644,root,root) /usr/share/man/man8/samhain*
-%attr(644,root,root) /etc/logrotate.d/samhain
-%attr(600,root,root) /usr/share/selinux/packages/samhain.pp
-%if "%{name}" == "yule"
-%attr(750,root,samhain) /var/lib/samhain
-%attr(750,yule,samhain) /var/log
-%endif
-%config(noreplace) /etc/samhainrc
 %post 
 restorecon /usr/lib64/httpd/modules/mod_jk.so 
+
+
 %changelog
-* Fri Jul 24 2020 Kostadin Karaivanovov
-- upgrade to samhain 4.4.1
+* Fri Aug 07 2020 Kostadin Karaivanovov
+- upgrade to mod_jk 1.2.48
 - build for CentOS7
-
-
