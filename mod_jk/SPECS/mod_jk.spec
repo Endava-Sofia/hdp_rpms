@@ -40,3 +40,4 @@ install -m 755 native/apache-2.0/mod_jk.so %{buildroot}%{_libdir}/httpd/modules/
 
 %changelog
 * Fri Aug  7 2020 larry
+- Initialize
