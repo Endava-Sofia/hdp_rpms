@@ -1,0 +1,113 @@
+- name: Create a sandbox instance
+  hosts: localhost
+  gather_facts: False
+  vars:
+    instance_type: t3.small
+    region: eu-central-1
+    vpc: vpc-1673d67c
+  tasks:
+    - ec2_vpc_subnet_info:
+        region: "{{ region }}"
+        filters:
+          vpc-id: "{{ vpc }}"
+      register: subnet
+
+    - name: Find ami
+      ec2_ami_info:
+        region: "{{ region }}"
+        owners: "125523088429"
+        filters:
+            name: "CentOS 7.8*"
+      register: ami_find
+
+    - name: Create an EC2 key
+      ec2_key:
+        name: "rpmbuild-key"
+        region: "{{ region }}"
+        key_material: "{{ item }}"
+      with_file: ~/.ssh/id_rsa.pub
+
+    - name: Create security group
+      ec2_group:
+        name: "rpmbuild_security_group"
+        description: "rpmbuild security group"
+        region: "{{ region }}"
+        rules:
+          - proto: tcp  # ssh
+            from_port: 22
+            to_port: 22
+            cidr_ip: 0.0.0.0/0
+        rules_egress:
+          - proto: all
+            cidr_ip: 0.0.0.0/0
+      register: sg
+
+    - name: Launch instance
+      ec2:
+        key_name: "rpmbuild-key"
+        group_id: "{{ sg.group_id }}"
+        instance_type: "{{ instance_type }}"
+        image: "{{ ami_find.images[0].image_id }}"
+        wait: true
+        region: "{{ region }}"
+        vpc_subnet_id: "{{ subnet.subnets[0].id }}"
+        assign_public_ip: yes
+      register: ec2
+
+    - name: Add new instance to host group
+      add_host:
+        hostname: "{{ item.public_ip }}"
+        groupname: launched
+      loop: "{{ ec2.instances }}"
+
+    - name: Wait for SSH to come up
+      delegate_to: "{{ item.public_dns_name }}"
+      wait_for_connection:
+        delay: 60
+        timeout: 320
+      loop: "{{ ec2.instances }}"
+
+- name: Build specs
+  hosts: launched
+  become: True
+  gather_facts: True
+  roles:
+    - build
+
+- name: Post Build
+  hosts: localhost
+  vars:
+    region: eu-central-1
+    bucket: hdp-fw-config
+
+  tasks:
+    - name: Terminate instances that were previously launched
+      ec2:
+        region: "{{ region }}"
+        state: 'absent'
+        instance_ids: '{{ ec2.instance_ids }}'
+
+    - name: Remove key
+      ec2_key:
+        name: "rpmbuild-key"
+        region: "{{ region }}"
+        state: absent
+
+    - name: Find files
+      find:
+        paths: /tmp
+        file_type: file
+        use_regex: yes
+        recurse: yes
+        patterns:
+          - '.*.rpm$'
+      register: rpms
+
+    - name: Upload rpms to s3
+      aws_s3:
+        bucket: "{{ bucket }}"
+        object: "/rpms/{{ item.path.split('/')[-1] }}"
+        src: "{{ item.path }}"
+        mode: put
+        permission: public-read
+      loop: "{{ rpms.files }}"

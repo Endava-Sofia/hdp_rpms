@@ -1,0 +1,55 @@
+- name: ensure a list of packages installed
+  yum:
+    name: "{{ packages }}"
+  vars:
+    packages:
+    - rpm-build
+    - rpmdevtools
+    - httpd-devel
+    - gcc
+    - selinux-policy-doc
+    - checkpolicy
+    - selinux-policy-devel
+
+- name: Setup tree
+  command: rpmdev-setuptree
+
+- name: copy file
+  copy:
+    src: "{{ item.src }}"
+    dest: "{{ item.dest }}"
+    mode: '0644'
+  with_items:
+    - { src: 'mod_jk.spec', dest: '~/rpmbuild/SPECS/mod_jk.spec' }
+    - { src: 'samhain.spec', dest: '~/rpmbuild/SPECS/samhain.spec' }
+
+
+- name: Bumpspec
+  command: rpmdev-bumpspec --comment="Build from source" --userstring="John Doe<john.doe@example.com>" ~/rpmbuild/SPECS/mod_jk.spec
+
+- name: Bumpspec
+  command: rpmdev-bumpspec --comment="Build from source" --userstring="John Doe<john.doe@example.com>" ~/rpmbuild/SPECS/samhain.spec
+
+- name: Build mod_jk
+  command:  rpmbuild -ba ~/rpmbuild/SPECS/mod_jk.spec
+
+# - name: Build samhain
+#   command:  rpmbuild -ba ~/rpmbuild/SPECS/samhain.spec
+
+
+- name: Find files
+  find:
+    paths: ~/rpmbuild/RPMS/x86_64/
+    file_type: file
+    use_regex: yes
+    excludes:
+      - '.*debuginfo.*'
+    patterns:
+      - '.*.rpm$'
+  register: rpms
+
+- name: fatch rpms
+  fetch:
+    src: "{{ item.path }}"
+    dest: "/tmp"
+  loop: "{{ rpms.files }}"
