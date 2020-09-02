@@ -78,7 +78,7 @@
   hosts: localhost
   vars:
     region: eu-central-1
-    bucket: hdp-fw-config
+    bucket: hdp-config-repository
 
   tasks:
     - name: Terminate instances that were previously launched

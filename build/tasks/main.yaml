@@ -22,7 +22,8 @@
   with_items:
     - { src: 'mod_jk.spec', dest: '~/rpmbuild/SPECS/mod_jk.spec' }
     - { src: 'samhain.spec', dest: '~/rpmbuild/SPECS/samhain.spec' }
-
+    - { src: 'samhain-4.4.2.tar.gz', dest: '~/rpmbuild/SOURCES/samhain-4.4.2.tar.gz' }
+    - { src: 'samhain_sepol_hpc.tar.gz', dest: '~/rpmbuild/SOURCES/samhain_sepol_hpc.tar.gz' }
 
 - name: Bumpspec
   command: rpmdev-bumpspec --comment="Build from source" --userstring="John Doe<john.doe@example.com>" ~/rpmbuild/SPECS/mod_jk.spec
@@ -33,8 +34,8 @@
 - name: Build mod_jk
   command:  rpmbuild -ba ~/rpmbuild/SPECS/mod_jk.spec
 
-# - name: Build samhain
-#   command:  rpmbuild -ba ~/rpmbuild/SPECS/samhain.spec
+- name: Build samhain
+  command:  rpmbuild -ba ~/rpmbuild/SPECS/samhain.spec
 
 
 - name: Find files

@@ -5,7 +5,7 @@
 
 Summary: File integrity and host-based IDS
 Name: samhain
-Version: 4.4.1
+Version: 4.4.2
 Release: HPC1_centos7.x86_64
 License: GPL
 Group: System Environment/Base
@@ -306,4 +306,3 @@ fi
 
 * Mon Dec 16 2002 Andre Oliveira da Costa <brblueser@uol.com.br> 1.6.6
 - First attempt to build from sources
-
