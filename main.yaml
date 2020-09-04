@@ -111,3 +111,9 @@
         mode: put
         permission: public-read
       loop: "{{ rpms.files }}"
+
+    - name: Remove files
+      file:
+        path: "{{ item.path }}"
+        state: absent
+      loop: "{{ rpms.files }}"
