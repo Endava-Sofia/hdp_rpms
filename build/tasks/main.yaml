@@ -1,15 +1,14 @@
 - name: ensure a list of packages installed
   yum:
-    name: "{{ packages }}"
-  vars:
-    packages:
-    - rpm-build
-    - rpmdevtools
-    - httpd-devel
-    - gcc
-    - selinux-policy-doc
-    - checkpolicy
-    - selinux-policy-devel
+    name:
+      - rpm-build
+      - rpmdevtools
+      - httpd-devel
+      - gcc
+      - git
+      - selinux-policy-doc
+      - checkpolicy
+      - selinux-policy-devel
 
 - name: Setup tree
   command: rpmdev-setuptree
@@ -37,7 +36,6 @@
 - name: Build samhain
   command:  rpmbuild -ba ~/rpmbuild/SPECS/samhain.spec
 
-
 - name: Find files
   find:
     paths: ~/rpmbuild/RPMS/x86_64/
@@ -49,8 +47,38 @@
       - '.*.rpm$'
   register: rpms
 
-- name: fatch rpms
+- name: fetch rpms
   fetch:
     src: "{{ item.path }}"
     dest: "/tmp"
   loop: "{{ rpms.files }}"
+
+- name: clone git repo for efs-utils
+  git:
+    repo: https://github.com/aws/efs-utils
+    version: master
+    dest: ~/efs-utils
+    accept_hostkey: yes
+
+- name: Build efs-utils
+  command: make rpm
+  args:
+    chdir: ~/efs-utils
+
+- name: Find efs-utils files
+  find:
+    paths: ~/efs-utils/build
+    file_type: file
+    use_regex: yes
+    excludes:
+      - '.*debuginfo.*'
+    patterns:
+      - '.*.rpm$'
+  register: efsrpms
+
+- name: fetch efs-utils rpms
+  fetch:
+    src: "{{ item.path }}"
+    dest: "/tmp"
+  loop: "{{ efsrpms.files }}"
+  become: yes
