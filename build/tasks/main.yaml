@@ -9,76 +9,27 @@
       - selinux-policy-doc
       - checkpolicy
       - selinux-policy-devel
+  tags:
+    - always
 
 - name: Setup tree
   command: rpmdev-setuptree
+  tags: 
+    - always
 
-- name: copy file
-  copy:
-    src: "{{ item.src }}"
-    dest: "{{ item.dest }}"
-    mode: '0644'
-  with_items:
-    - { src: 'mod_jk.spec', dest: '~/rpmbuild/SPECS/mod_jk.spec' }
-    - { src: 'samhain.spec', dest: '~/rpmbuild/SPECS/samhain.spec' }
-    - { src: 'samhain-4.4.2.tar.gz', dest: '~/rpmbuild/SOURCES/samhain-4.4.2.tar.gz' }
-    - { src: 'samhain_sepol_hpc.tar.gz', dest: '~/rpmbuild/SOURCES/samhain_sepol_hpc.tar.gz' }
+- import_tasks: samhain.yml
+  tags:
+    - samhain
 
-- name: Bumpspec
-  command: rpmdev-bumpspec --comment="Build from source" --userstring="John Doe<john.doe@example.com>" ~/rpmbuild/SPECS/mod_jk.spec
+- import_tasks: mod_jk.yml
+  tags:
+    - mod_jk
 
-- name: Bumpspec
-  command: rpmdev-bumpspec --comment="Build from source" --userstring="John Doe<john.doe@example.com>" ~/rpmbuild/SPECS/samhain.spec
+- import_tasks: amazon-efs-utils.yml
+  tags:
+    - efs-utils 
 
-- name: Build mod_jk
-  command:  rpmbuild -ba ~/rpmbuild/SPECS/mod_jk.spec
+- import_tasks: java.yml
+  tags:
+    - java
 
-- name: Build samhain
-  command:  rpmbuild -ba ~/rpmbuild/SPECS/samhain.spec
-
-- name: Find files
-  find:
-    paths: ~/rpmbuild/RPMS/x86_64/
-    file_type: file
-    use_regex: yes
-    excludes:
-      - '.*debuginfo.*'
-    patterns:
-      - '.*.rpm$'
-  register: rpms
-
-- name: fetch rpms
-  fetch:
-    src: "{{ item.path }}"
-    dest: "/tmp"
-  loop: "{{ rpms.files }}"
-
-- name: clone git repo for efs-utils
-  git:
-    repo: https://github.com/aws/efs-utils
-    version: master
-    dest: ~/efs-utils
-    accept_hostkey: yes
-
-- name: Build efs-utils
-  command: make rpm
-  args:
-    chdir: ~/efs-utils
-
-- name: Find efs-utils files
-  find:
-    paths: ~/efs-utils/build
-    file_type: file
-    use_regex: yes
-    excludes:
-      - '.*debuginfo.*'
-    patterns:
-      - '.*.rpm$'
-  register: efsrpms
-
-- name: fetch efs-utils rpms
-  fetch:
-    src: "{{ item.path }}"
-    dest: "/tmp"
-  loop: "{{ efsrpms.files }}"
-  become: yes

@@ -1,0 +1,28 @@
+- name: clone git repo for efs-utils
+  git:
+    repo: https://github.com/aws/efs-utils
+    version: master
+    dest: ~/efs-utils
+    accept_hostkey: yes
+
+- name: Build efs-utils
+  command: make rpm
+  args:
+    chdir: ~/efs-utils
+
+- name: Find efs-utils files
+  find:
+    paths: ~/efs-utils/build
+    file_type: file
+    excludes:
+      - '*debuginfo*'
+    patterns:
+      - 'amazon-efs-utils*.rpm'
+  register: efsrpms
+
+- name: fetch efs-utils rpms
+  fetch:
+    src: "{{ item.path }}"
+    dest: "/tmp"
+  loop: "{{ efsrpms.files }}"
+  become: yes

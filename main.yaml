@@ -1,10 +1,12 @@
 - name: Create a sandbox instance
   hosts: localhost
   gather_facts: False
+  tags: [ always ]
   vars:
     instance_type: t3.small
     region: eu-central-1
     vpc: vpc-1673d67c
+  
   tasks:
     - ec2_vpc_subnet_info:
         region: "{{ region }}"
@@ -67,6 +69,7 @@
         timeout: 320
       loop: "{{ ec2.instances }}"
 
+###
 - name: Build specs
   hosts: launched
   become: True
@@ -74,8 +77,10 @@
   roles:
     - build
 
+##
 - name: Post Build
   hosts: localhost
+  tags: [ always ]
   vars:
     region: eu-central-1
     bucket: hdp-config-repository-production

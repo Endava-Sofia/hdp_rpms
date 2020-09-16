@@ -1,0 +1,31 @@
+- name: copy file
+  copy:
+    src: "{{ item.src }}"
+    dest: "{{ item.dest }}"
+    mode: '0644'
+  with_items:
+    - { src: 'samhain.spec', dest: '~/rpmbuild/SPECS/samhain.spec' }
+    - { src: 'samhain-4.4.2.tar.gz', dest: '~/rpmbuild/SOURCES/samhain-4.4.2.tar.gz' }
+    - { src: 'samhain_sepol_hpc.tar.gz', dest: '~/rpmbuild/SOURCES/samhain_sepol_hpc.tar.gz' }
+
+- name: Bumpspec samhain
+  command: rpmdev-bumpspec --comment="Build from source" --userstring="John Doe<john.doe@example.com>" ~/rpmbuild/SPECS/samhain.spec
+
+- name: Build samhain
+  command:  rpmbuild -ba ~/rpmbuild/SPECS/samhain.spec
+
+- name: Find samhain rpm files
+  find:
+    paths: ~/rpmbuild/RPMS/x86_64/
+    file_type: file
+    excludes:
+      - '*debuginfo*'
+    patterns:
+      - 'samhain*.rpm'
+  register: rpms
+
+- name: fetch samhain rpms
+  fetch:
+    src: "{{ item.path }}"
+    dest: "/tmp"
+  loop: "{{ rpms.files }}"

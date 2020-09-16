@@ -1,0 +1,15 @@
+diff -Nur jre1.8.0_201.orig/lib/security/java.security jre1.8.0_201/lib/security/java.security
+--- jre1.8.0_201.orig/lib/security/java.security	2018-12-15 20:45:11.000000000 +0100
++++ jre1.8.0_201/lib/security/java.security	2019-03-13 19:27:10.000000000 +0100
+@@ -641,8 +641,9 @@
+ #
+ # Example:
+ #   jdk.tls.disabledAlgorithms=MD5, SSLv3, DSA, RSA keySize < 2048
+-jdk.tls.disabledAlgorithms=SSLv3, RC4, DES, MD5withRSA, DH keySize < 1024, \
+-    EC keySize < 224, 3DES_EDE_CBC, anon, NULL
++#jdk.tls.disabledAlgorithms=SSLv3, RC4, DES, MD5withRSA, DH keySize < 1024, \
++#    EC keySize < 224, 3DES_EDE_CBC, anon, NULL
++jdk.tls.disabledAlgorithms=SSLv3, RC4, DH keySize < 768
+ 
+ # Legacy algorithms for Secure Socket Layer/Transport Layer Security (SSL/TLS)
+ # processing in JSSE implementation.

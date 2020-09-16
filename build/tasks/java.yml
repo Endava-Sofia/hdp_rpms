@@ -1,0 +1,42 @@
+- name: copy java files
+  copy:
+    src: "{{ item.src }}"
+    dest: "{{ item.dest }}"
+    mode: '0644'
+  with_items:
+    - { src: 'oracle-java-hpc.spec',                     dest: '~/rpmbuild/SPECS/oracle-java-hpc.spec' }
+    - { src: 'java/jre-8u241-linux-x64.tar.gz',          dest: '~/rpmbuild/SOURCES/jre-8u241-linux-x64.tar.gz' }
+    - { src: 'java/heidelpay-inten-root-ca.pem',         dest: '~/rpmbuild/SOURCES/heidelpay-inten-root-ca.pem' }
+    - { src: 'java/HPC-PROD-ROOT-cacert.pem',            dest: '~/rpmbuild/SOURCES/HPC-PROD-ROOT-cacert.pem'}
+    - { src: 'java/HPC-ROOT-CA-cacert.pem',              dest: '~/rpmbuild/SOURCES/HPC-ROOT-CA-cacert.pem'}
+    - { src: 'java/hpchd-loc-root-ca.pem',               dest: '~/rpmbuild/SOURCES/hpchd-loc-root-ca.pem'}
+    - { src: 'java/jce_policy-8.zip',                    dest: '~/rpmbuild/SOURCES/jce_policy-8.zip'}
+    - { src: 'java/orace-java-hpc.sec.patch',            dest: '~/rpmbuild/SOURCES/orace-java-hpc.sec.patch'}
+    - { src: 'java/SymantecClass3SecureServerCA-G4.pem', dest: '~/rpmbuild/SOURCES/SymantecClass3SecureServerCA-G4.pem'}
+    - { src: 'java/ca.der',                              dest: '~/rpmbuild/SOURCES/ca.der'}
+
+- name: Bumpspec java
+  command: rpmdev-bumpspec --comment="Build from source" --userstring="John Doe<john.doe@example.com>" ~/rpmbuild/SPECS/oracle-java-hpc.spec
+
+- name: Build java
+  command:  rpmbuild -ba ~/rpmbuild/SPECS/oracle-java-hpc.spec
+
+- name: Find java rpm files
+  find:
+    paths: ~/rpmbuild/RPMS/x86_64/
+    file_type: file
+    excludes:
+      - '*debuginfo*'
+    patterns:
+      - 'jre*.rpm'
+  register: rpms
+
+- name: Debug 
+  debug: 
+    var: rpms 
+
+- name: fetch java rpms
+  fetch:
+    src: "{{ item.path }}"
+    dest: "/tmp"
+  loop: "{{ rpms.files }}"

@@ -1,0 +1,29 @@
+- name: copy mod_jk files
+  copy:
+    src: "{{ item.src }}"
+    dest: "{{ item.dest }}"
+    mode: '0644'
+  with_items:
+    - { src: 'mod_jk.spec', dest: '~/rpmbuild/SPECS/mod_jk.spec' }
+
+- name: Bumpspec mod_jk
+  command: rpmdev-bumpspec --comment="Build from source" --userstring="John Doe<john.doe@example.com>" ~/rpmbuild/SPECS/mod_jk.spec
+
+- name: Build mod_jk
+  command:  rpmbuild -ba ~/rpmbuild/SPECS/mod_jk.spec
+
+- name: Find mod_jk rpm files
+  find:
+    paths: ~/rpmbuild/RPMS/x86_64/
+    file_type: file
+    excludes:
+      - '*debuginfo*'
+    patterns:
+      - 'mod_jk*.rpm'
+  register: rpms
+
+- name: fetch mod_jk rpms
+  fetch:
+    src: "{{ item.path }}"
+    dest: "/tmp"
+  loop: "{{ rpms.files }}"
